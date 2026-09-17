@@ -5640,7 +5640,7 @@ function AstronomyObjectCard({
                     <strong className="text-white/65">
                       Best
                     </strong>{" "}
-                    {formatObservationTime(best)}
+                      {formatObservationTime(best?.time)}
                   </span>
                 )}
 
