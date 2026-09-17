@@ -3194,6 +3194,7 @@ function Planner({
   const [fromTime, setFromTime] = useState("20:00")
   const [toTime, setToTime] = useState("07:00")
 
+  const [analysisStep, setAnalysisStep] = useState(0)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [error, setError] = useState("")
 
@@ -3205,7 +3206,24 @@ function Planner({
 
   const analyzed = !!observationData
 
+  useEffect(() => {
+  if (!isAnalyzing) {
+    setAnalysisStep(0)
+    return
+  }
 
+  const interval = setInterval(() => {
+    setAnalysisStep((prev) => {
+      if (prev >= 6) return prev
+      return prev + 1
+    })
+  }, 5000)
+
+  return () => clearInterval(interval)
+}, [isAnalyzing])
+
+const [showLocationEditor, setShowLocationEditor] =
+  useState(false)
   
 
   async function generateObservationPlan() {
@@ -3317,6 +3335,8 @@ function Planner({
       }
     )
   }
+
+ sAnalyzing])
 
   function saveManualLocation() {
     setLocation({
@@ -3450,7 +3470,7 @@ function Planner({
           ANALYZING
       ===================================================== */}
 
-      {isAnalyzing && (
+     {/* {isAnalyzing && (
         <div className="rounded-3xl border border-cyan-400/10 bg-cyan-400/[0.025] px-6 py-12 text-center">
           <Loader2 className="mx-auto h-8 w-8 animate-spin text-cyan-300" />
 
@@ -3463,7 +3483,65 @@ function Planner({
             objects, constellations, meteor showers and events.
           </p>
         </div>
-      )}
+      )} */   */}
+
+
+      {isAnalyzing && (
+  <div className="rounded-3xl border border-cyan-400/10 bg-cyan-400/[0.025] px-6 py-12 text-center">
+    <Loader2 className="mx-auto h-8 w-8 animate-spin text-cyan-300" />
+
+    <h2 className="mt-4 text-lg font-semibold">
+      Analyzing your sky...
+    </h2>
+
+    <div className="mx-auto mt-6 max-w-md space-y-2 text-left text-sm">
+      {[
+        "Preparing observation location",
+        "Checking weather conditions",
+        "Calculating Sun & Moon",
+        "Finding visible planets",
+        "Scanning deep-sky objects",
+        "Checking constellations & meteor showers",
+        "Checking astronomical events",
+      ].map((step, index) => {
+        const completed = index < analysisStep
+        const active = index === analysisStep
+
+        return (
+          <div
+            key={step}
+            className="flex items-center gap-3"
+          >
+            <span
+              className={
+                completed
+                  ? "text-emerald-400"
+                  : active
+                    ? "text-cyan-300"
+                    : "text-white/25"
+              }
+            >
+              {completed ? "✓" : active ? "⟳" : "○"}
+            </span>
+
+            <span
+              className={
+                completed
+                  ? "text-white/70"
+                  : active
+                    ? "text-white"
+                    : "text-white/30"
+              }
+            >
+              {step}
+              {active && "..."}
+            </span>
+          </div>
+        )
+      })}
+    </div>
+  </div>
+)}
 
       {/* =====================================================
           RESULTS
