@@ -8,7 +8,7 @@ from fastapi import APIRouter, Query
 from app.api.weather import get_weather
 from app.api.sun import get_sun
 from app.api.planets import get_planets
-from app.api.deep_objects import get_deep_sky
+from app.api.deep_objects import get_deep_sky_data
 from app.api.constellations import get_constellations
 from app.api.meteor_showers import get_meteor_showers
 from app.api.atronomical_events import get_astronomical_events
@@ -2012,7 +2012,7 @@ def analyze_observation(
     # ========================================================
 
     deep_sky_raw = safe_call(
-        get_deep_sky,
+        get_deep_sky_data,
 
         latitude,
         longitude,
