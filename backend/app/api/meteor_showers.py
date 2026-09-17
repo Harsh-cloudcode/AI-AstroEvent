@@ -3150,56 +3150,64 @@ detail["radiant_altitude_deg"] = (
 
 local_data = detail.get("local")
 
-if isinstance(local_data, dict):
+        if isinstance(local_data, dict):
 
-    best_window = local_data.get("bestWindow")
+            best_window = local_data.get("bestWindow")
 
-    if isinstance(best_window, dict):
+            if isinstance(best_window, dict):
 
-        detail["best_window"] = {
-            "start": best_window.get("start"),
-            "end": best_window.get("end"),
+                detail["best_window"] = {
+                    "start": best_window.get("start"),
+                    "end": best_window.get("end"),
+                }
+
+            hourly = local_data.get("hourly")
+
+            if isinstance(hourly, list) and hourly:
+
+                valid_hours = [
+                    item
+                    for item in hourly
+                    if isinstance(item, dict)
+                    and item.get("hr") is not None
+                ]
+
+                if valid_hours:
+
+                    peak_hour = max(
+                        valid_hours,
+                        key=lambda item: float(
+                            item.get("hr", 0)
+                        )
+                    )
+
+                    detail["best_time"] = (
+                        peak_hour.get("local")
+                    )
+
+                    detail["peak_rate"] = (
+                        peak_hour.get("hr")
+                    )
+
+                    detail["peak_radiant_altitude_deg"] = (
+                        peak_hour.get("radiantAlt")
+                    )
+
+        detail["selected_date"] = from_date
+
+        # Preserve season information
+        detail["active"] = {
+            "start": active_start,
+            "end": active_end
         }
 
-    hourly = local_data.get("hourly")
+        # ====================================================
+        # ADD ONLY VERIFIED ACTIVE SHOWER
+        # ====================================================
 
-    if isinstance(hourly, list) and hourly:
+        results.append(detail)
 
-        valid_hours = [
-            item
-            for item in hourly
-            if isinstance(item, dict)
-            and item.get("hr") is not None
-        ]
-
-        if valid_hours:
-
-            peak_hour = max(
-                valid_hours,
-                key=lambda item: float(
-                    item.get("hr", 0)
-                )
-            )
-
-            detail["best_time"] = (
-                peak_hour.get("local")
-            )
-
-            detail["peak_rate"] = (
-                peak_hour.get("hr")
-            )
-
-            detail["peak_radiant_altitude_deg"] = (
-                peak_hour.get("radiantAlt")
-            )
-
-detail["selected_date"] = from_date
-
-# Preserve season information
-detail["active"] = {
-    "start": active_start,
-    "end": active_end
-}
+    return results
 
 # ====================================================
 # ADD ONLY VERIFIED ACTIVE SHOWER
