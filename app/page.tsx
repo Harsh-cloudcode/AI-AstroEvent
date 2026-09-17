@@ -3197,6 +3197,7 @@ function Planner({
 
   const [analysisStep, setAnalysisStep] = useState(0)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [typedText, setTypedText] = useState("")
   const [error, setError] = useState("")
 
   const [showLocationEditor, setShowLocationEditor] =
@@ -3222,6 +3223,42 @@ function Planner({
 
   return () => clearInterval(interval)
 }, [isAnalyzing])
+
+
+  useEffect(() => {
+  if (!isAnalyzing) {
+    setTypedText("")
+    return
+  }
+
+  const steps = [
+    "Preparing observation location",
+    "Checking weather conditions",
+    "Calculating Sun & Moon",
+    "Finding visible planets",
+    "Scanning deep-sky objects",
+    "Checking constellations & meteor showers",
+    "Checking astronomical events",
+  ]
+
+  const text = steps[analysisStep] || ""
+
+  setTypedText("")
+
+  let index = 0
+
+  const typingInterval = setInterval(() => {
+    index += 1
+
+    setTypedText(text.slice(0, index))
+
+    if (index >= text.length) {
+      clearInterval(typingInterval)
+    }
+  }, 35)
+
+  return () => clearInterval(typingInterval)
+}, [analysisStep, isAnalyzing])
 
 
   async function generateObservationPlan() {
@@ -3482,31 +3519,30 @@ function Planner({
       )} */}
 
 
-     {isAnalyzing && (
+    {isAnalyzing && (
   <div className="rounded-3xl border border-cyan-400/10 bg-cyan-400/[0.025] px-6 py-12 text-center">
 
+    {/* Loading Spinner */}
     <Loader2 className="mx-auto h-8 w-8 animate-spin text-cyan-300" />
 
+    {/* Main Heading */}
     <h2 className="mt-4 text-lg font-semibold">
       Analyzing your sky...
     </h2>
 
+    {/* Typewriter Status */}
     <div className="mt-6 flex min-h-[28px] items-center justify-center">
-      <div
-        key={analysisStep}
-        className="animate-[fadeIn_0.35s_ease-out] text-sm text-white/70"
-      >
-        {[
-          "Preparing observation location",
-          "Checking weather conditions",
-          "Calculating Sun & Moon",
-          "Finding visible planets",
-          "Scanning deep-sky objects",
-          "Checking constellations & meteor showers",
-          "Checking astronomical events",
-        ][analysisStep]}
-        ...
+
+      <div className="text-sm text-white/70">
+
+        {typedText}
+
+        <span className="ml-0.5 inline-block animate-pulse text-cyan-300">
+          |
+        </span>
+
       </div>
+
     </div>
 
   </div>
