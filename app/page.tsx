@@ -3468,7 +3468,7 @@ const [showLocationEditor, setShowLocationEditor] =
           ANALYZING
       ===================================================== */}
 
-     {/* {isAnalyzing && (
+     {/*  {isAnalyzing && (
         <div className="rounded-3xl border border-cyan-400/10 bg-cyan-400/[0.025] px-6 py-12 text-center">
           <Loader2 className="mx-auto h-8 w-8 animate-spin text-cyan-300" />
 
@@ -3481,7 +3481,7 @@ const [showLocationEditor, setShowLocationEditor] =
             objects, constellations, meteor showers and events.
           </p>
         </div>
-      )} */   */}
+      )} */}
 
 
       {isAnalyzing && (
