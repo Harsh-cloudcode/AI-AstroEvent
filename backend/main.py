@@ -27,6 +27,7 @@ app.add_middleware(
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "https://ai-astro-event.vercel.app",
+        "https://ai-astro-event-84dq60j1v-harshaldeshmukh386-2972s-projects.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
