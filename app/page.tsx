@@ -2442,7 +2442,8 @@
 
 "use client"
 
-import { useMemo, useRef, useState } from "react"
+// import { useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import {
   Activity,
   CalendarDays,
@@ -3222,9 +3223,6 @@ function Planner({
   return () => clearInterval(interval)
 }, [isAnalyzing])
 
-const [showLocationEditor, setShowLocationEditor] =
-  useState(false)
-  
 
   async function generateObservationPlan() {
   setError("")
