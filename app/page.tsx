@@ -3304,39 +3304,37 @@ const [showLocationEditor, setShowLocationEditor] =
 }
 
   function useBrowserLocation() {
-    if (!navigator.geolocation) {
-      setError(
-        "Location services are not supported by this browser."
-      )
-      return
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const nextLocation = {
-          name: "Current Location",
-          latitude: Number(
-            position.coords.latitude.toFixed(6)
-          ),
-          longitude: Number(
-            position.coords.longitude.toFixed(6)
-          ),
-        }
-
-        setLocation(nextLocation)
-        setManualLocation(nextLocation)
-        setShowLocationEditor(false)
-        setError("")
-      },
-      () => {
-        setError(
-          "Unable to access your current location."
-        )
-      }
+  if (!navigator.geolocation) {
+    setError(
+      "Location services are not supported by this browser."
     )
+    return
   }
 
- sAnalyzing])
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const nextLocation = {
+        name: "Current Location",
+        latitude: Number(
+          position.coords.latitude.toFixed(6)
+        ),
+        longitude: Number(
+          position.coords.longitude.toFixed(6)
+        ),
+      }
+
+      setLocation(nextLocation)
+      setManualLocation(nextLocation)
+      setShowLocationEditor(false)
+      setError("")
+    },
+    () => {
+      setError(
+        "Unable to access your current location."
+      )
+    }
+  )
+}
 
   function saveManualLocation() {
     setLocation({
