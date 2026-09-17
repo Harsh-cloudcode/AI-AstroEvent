@@ -28,6 +28,8 @@ app.add_middleware(
         "http://127.0.0.1:3000",
         "https://ai-astro-event.vercel.app",
         "https://ai-astro-event-84dq60j1v-harshaldeshmukh386-2972s-projects.vercel.app",
+        "https://astrogazing.in",
+        "https://www.astrogazing.in",
     ],
     allow_credentials=True,
     allow_methods=["*"],
