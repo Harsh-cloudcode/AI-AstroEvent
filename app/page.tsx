@@ -3900,7 +3900,7 @@ function QuickSummary({
     </section>
   )
 }
-/
+
 function SkyConditions({ data }: { data: any }) {
   function getAverage(value: any): number | null {
     if (Array.isArray(value)) {
