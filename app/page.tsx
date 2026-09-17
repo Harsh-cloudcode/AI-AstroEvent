@@ -3208,58 +3208,55 @@ function Planner({
 
   const analyzed = !!observationData
 
- useEffect(() => {
-  if (!isAnalyzing) {
-    setAnalysisStep(0)
-    return
-  }
+  useEffect(() => {
+    if (!isAnalyzing) {
+      setAnalysisStep(0)
+      return
+    }
 
-  const interval = setInterval(() => {
-    setAnalysisStep((prev) => {
-      if (prev >= 6) return prev
-      return prev + 1
-    })
-  }, 5000)
+    const interval = setInterval(() => {
+      setAnalysisStep((prev) => {
+        if (prev >= 6) return prev
+        return prev + 1
+      })
+    }, 5000)
 
-  return () => clearInterval(interval)
-}, [isAnalyzing])
-
+    return () => clearInterval(interval)
+  }, [isAnalyzing])
 
   useEffect(() => {
-  if (!isAnalyzing) {
-    setTypedText("")
-    return
-  }
-
-  const steps = [
-    "Preparing observation location",
-    "Checking weather conditions",
-    "Calculating Sun & Moon",
-    "Finding visible planets",
-    "Scanning deep-sky objects",
-    "Checking constellations & meteor showers",
-    "Checking astronomical events",
-  ]
-
-  const text = steps[analysisStep] || ""
-
-  setTypedText("")
-
-  let index = 0
-
-  const typingInterval = setInterval(() => {
-    index += 1
-
-    setTypedText(text.slice(0, index))
-
-    if (index >= text.length) {
-      clearInterval(typingInterval)
+    if (!isAnalyzing) {
+      setTypedText("")
+      return
     }
-  }, 35)
 
-  return () => clearInterval(typingInterval)
-}, [analysisStep, isAnalyzing])
+    const steps = [
+      "Preparing observation location",
+      "Checking weather conditions",
+      "Calculating Sun & Moon",
+      "Finding visible planets",
+      "Scanning deep-sky objects",
+      "Checking constellations & meteor showers",
+      "Checking astronomical events",
+    ]
 
+    const text = steps[analysisStep] || ""
+
+    setTypedText("")
+
+    let index = 0
+
+    const typingInterval = setInterval(() => {
+      index += 1
+      setTypedText(text.slice(0, index))
+
+      if (index >= text.length) {
+        clearInterval(typingInterval)
+      }
+    }, 35)
+
+    return () => clearInterval(typingInterval)
+  }, [analysisStep, isAnalyzing])
 
   async function generateObservationPlan() {
   setError("")
