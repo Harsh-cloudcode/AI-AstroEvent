@@ -3195,22 +3195,19 @@ if isinstance(local_data, dict):
 
 detail["selected_date"] = from_date
 
-        detail["selected_date"] = from_date
+# Preserve season information
+detail["active"] = {
+    "start": active_start,
+    "end": active_end
+}
 
-        # Preserve season information
-        detail["active"] = {
-            "start": active_start,
-            "end": active_end
-        }
+# ====================================================
+# ADD ONLY VERIFIED ACTIVE SHOWER
+# ====================================================
 
-        # ====================================================
-        # ADD ONLY VERIFIED ACTIVE SHOWER
-        # ====================================================
+results.append(detail)
 
-        results.append(detail)
-
-    return results
-
+return results
 
 # ============================================================
 # API ROUTE
