@@ -1,409 +1,3 @@
-# import requests
-# from fastapi import APIRouter, Query
-# from datetime import datetime, timezone, timedelta
-
-# router = APIRouter()
-
-# BASE_URL = "https://spacecatalog.org/api/v1"
-
-
-# @router.get("/deep-sky")
-# def get_deep_sky(
-#     latitude: float = Query(...),
-#     longitude: float = Query(...),
-#     from_date: str = Query(...),
-#     to_date: str = Query(...),
-#     from_time: str = Query("20:00"),
-#     to_time: str = Query("02:00"),
-#     max_magnitude: float = Query(10.0),
-#     min_altitude: float = Query(20.0),
-#     limit: int = Query(20)
-# ):
-
-#     try:
-
-#         # -----------------------------------------
-#         # Clean inputs
-#         # -----------------------------------------
-
-#         from_date = from_date.strip()
-#         to_date = to_date.strip()
-#         from_time = from_time.strip()
-#         to_time = to_time.strip()
-
-#         # -----------------------------------------
-#         # India timezone
-#         # -----------------------------------------
-
-#         india_timezone = timezone(
-#             timedelta(hours=5, minutes=30)
-#         )
-
-#         # -----------------------------------------
-#         # Start datetime
-#         # -----------------------------------------
-
-#         start_local = datetime.strptime(
-#             f"{from_date} {from_time}",
-#             "%Y-%m-%d %H:%M"
-#         ).replace(
-#             tzinfo=india_timezone
-#         )
-
-#         # -----------------------------------------
-#         # End datetime
-#         # -----------------------------------------
-
-#         end_local = datetime.strptime(
-#             f"{to_date} {to_time}",
-#             "%Y-%m-%d %H:%M"
-#         ).replace(
-#             tzinfo=india_timezone
-#         )
-
-#         if end_local <= start_local:
-
-#             return {
-#                 "error": "To date/time must be after From date/time"
-#             }
-
-#         # -----------------------------------------
-#         # Get objects
-#         # -----------------------------------------
-
-#         categories = [
-#             "galaxy",
-#             "nebula",
-#             "cluster"
-#         ]
-
-#         objects = []
-
-#         for category in categories:
-
-#             params = {
-#                 "category": category,
-#                 "mag_max": max_magnitude,
-#                 "limit": limit
-#             }
-
-#             response = requests.get(
-#                 f"{BASE_URL}/objects",
-#                 params=params,
-#                 timeout=20
-#             )
-
-#             response.raise_for_status()
-
-#             data = response.json()
-
-#             # IMPORTANT:
-#             # Some API responses can have null values
-
-#             if not isinstance(data, dict):
-#                 continue
-
-#             category_objects = data.get("objects")
-
-#             if not isinstance(category_objects, list):
-#                 continue
-
-#             objects.extend(category_objects)
-
-#         # -----------------------------------------
-#         # Remove duplicates
-#         # -----------------------------------------
-
-#         unique_objects = {}
-
-#         for obj in objects:
-
-#             if not isinstance(obj, dict):
-#                 continue
-
-#             slug = obj.get("slug")
-
-#             if slug:
-#                 unique_objects[slug] = obj
-
-#         objects = list(unique_objects.values())
-
-#         # -----------------------------------------
-#         # Calculate ephemeris
-#         # -----------------------------------------
-
-#         visible_objects = []
-
-#         for obj in objects:
-
-#             slug = obj.get("slug")
-
-#             if not slug:
-#                 continue
-
-#             ephemeris_params = {
-#                 "object": slug,
-#                 "lat": latitude,
-#                 "lon": longitude,
-#                 "date": from_date
-#             }
-
-#             eph_response = requests.get(
-#                 f"{BASE_URL}/ephemeris",
-#                 params=ephemeris_params,
-#                 timeout=20
-#             )
-
-#             if eph_response.status_code != 200:
-#                 continue
-
-#             eph = eph_response.json()
-
-#             if not isinstance(eph, dict):
-#                 continue
-
-#             # -------------------------------------
-#             # Safe dictionary handling
-#             # -------------------------------------
-
-#             observability = eph.get("observability")
-
-#             if not isinstance(observability, dict):
-#                 observability = {}
-
-#             best = observability.get("best")
-
-#             if not isinstance(best, dict):
-#                 best = {}
-
-#             events = eph.get("events")
-
-#             if not isinstance(events, dict):
-#                 events = {}
-
-#             moon = eph.get("moon")
-
-#             if not isinstance(moon, dict):
-#                 moon = {}
-
-#             # -------------------------------------
-#             # Best altitude
-#             # -------------------------------------
-
-#             best_altitude = best.get(
-#                 "altitude_deg"
-#             )
-
-#             if best_altitude is not None:
-
-#                 try:
-#                     best_altitude = float(
-#                         best_altitude
-#                     )
-#                 except:
-#                     best_altitude = None
-
-#             # -------------------------------------
-#             # Altitude filter
-#             # -------------------------------------
-
-#             if (
-#                 best_altitude is not None
-#                 and best_altitude < min_altitude
-#             ):
-#                 continue
-
-#             # -------------------------------------
-#             # Add object
-#             # -------------------------------------
-
-#             visible_objects.append({
-
-#                 "name": obj.get("name"),
-
-#                 "slug": slug,
-
-#                 "category": obj.get(
-#                     "category"
-#                 ),
-
-#                 "class": obj.get(
-#                     "class"
-#                 ),
-
-#                 "constellation": obj.get(
-#                     "constellation"
-#                 ),
-
-#                 "magnitude": obj.get(
-#                     "magnitude",
-#                     obj.get("mag")
-#                 ),
-
-#                 "designations": obj.get(
-#                     "designations",
-#                     []
-#                 ),
-
-#                 "ra_deg": obj.get(
-#                     "ra_deg"
-#                 ),
-
-#                 "dec_deg": obj.get(
-#                     "dec_deg"
-#                 ),
-
-#                 "rise": events.get(
-#                     "rise"
-#                 ),
-
-#                 "transit": events.get(
-#                     "transit"
-#                 ),
-
-#                 "set": events.get(
-#                     "set"
-#                 ),
-
-#                 "transit_altitude_deg":
-#                     events.get(
-#                         "transit_altitude_deg"
-#                     ),
-
-#                 "hours_observable":
-#                     observability.get(
-#                         "hours_observable"
-#                     ),
-
-#                 "best": best,
-
-#                 "moon": {
-
-#                     "phase_name":
-#                         moon.get(
-#                             "phase_name"
-#                         ),
-
-#                     "separation_deg":
-#                         moon.get(
-#                             "separation_deg"
-#                         )
-
-#                 },
-
-#                 "visible": True
-#             })
-
-#         # -----------------------------------------
-#         # Sort by altitude
-#         # -----------------------------------------
-
-#         visible_objects.sort(
-#             key=lambda x: (
-#                 x.get("best", {}).get(
-#                     "altitude_deg"
-#                 )
-#                 if isinstance(
-#                     x.get("best"),
-#                     dict
-#                 )
-#                 and x.get("best").get(
-#                     "altitude_deg"
-#                 ) is not None
-#                 else -999
-#             ),
-#             reverse=True
-#         )
-
-#         # -----------------------------------------
-#         # Response
-#         # -----------------------------------------
-
-#         return {
-
-#             "location": {
-
-#                 "latitude": latitude,
-
-#                 "longitude": longitude
-
-#             },
-
-#             "observation": {
-
-#                 "from_date": from_date,
-
-#                 "to_date": to_date,
-
-#                 "from_time": from_time,
-
-#                 "to_time": to_time,
-
-#                 "start_local":
-#                     start_local.isoformat(),
-
-#                 "end_local":
-#                     end_local.isoformat()
-
-#             },
-
-#             "filters": {
-
-#                 "max_magnitude":
-#                     max_magnitude,
-
-#                 "min_altitude":
-#                     min_altitude,
-
-#                 "limit":
-#                     limit
-
-#             },
-
-#             "count":
-#                 len(visible_objects),
-
-#             "objects":
-#                 visible_objects,
-
-#             "source": {
-
-#                 "name":
-#                     "SpaceCatalog.org",
-
-#                 "url":
-#                     "https://spacecatalog.org/api"
-
-#             }
-
-#         }
-
-#     except requests.exceptions.RequestException as e:
-
-#         return {
-
-#             "error":
-#                 "Unable to fetch SpaceCatalog data",
-
-#             "details":
-#                 str(e),
-
-#             "type":
-#                 type(e).__name__
-
-#         }
-
-#     except Exception as e:
-
-#         return {
-
-#             "error":
-#                 str(e),
-
-#             "type":
-#                 type(e).__name__
-
-#         }
 import requests
 
 from fastapi import APIRouter, Query
@@ -1695,21 +1289,41 @@ def get_deep_sky_data(
         }
 
 
+        # try:
+
+        #     eph_response = requests.get(
+
+        #         f"{BASE_URL}/ephemeris",
+
+        #         params=ephemeris_params,
+
+        #         timeout=20
+
+        #     )
+
+        # except requests.exceptions.RequestException:
+
+        #     continue
+
         try:
 
-            eph_response = requests.get(
+    eph_response = requests.get(
+        f"{BASE_URL}/ephemeris",
+        params=ephemeris_params,
+        timeout=20
+    )
 
-                f"{BASE_URL}/ephemeris",
+except requests.exceptions.RequestException as e:
 
-                params=ephemeris_params,
+    print("DEEP SKY EPHEMERIS REQUEST ERROR:", e)
+    continue
 
-                timeout=20
-
-            )
-
-        except requests.exceptions.RequestException:
-
-            continue
+print("========================================")
+print("DEEP SKY OBJECT:", obj.get("name"))
+print("CATEGORY:", obj.get("category"))
+print("SLUG:", slug)
+print("EPHEMERIS STATUS:", eph_response.status_code)
+print("EPHEMERIS URL:", eph_response.url)
 
 
         if eph_response.status_code != 200:
@@ -1717,15 +1331,25 @@ def get_deep_sky_data(
             continue
 
 
-        try:
+        # try:
 
-            eph = eph_response.json()
+        #     eph = eph_response.json()
 
-        except Exception:
+        # except Exception:
 
-            continue
+        #     continue
 
+try:
 
+    eph = eph_response.json()
+
+except Exception as e:
+
+    print("DEEP SKY JSON ERROR:", e)
+    print("RAW RESPONSE:", eph_response.text[:2000])
+    continue
+
+print("EPHEMERIS RESPONSE:", eph_response.text[:2000])
         if not isinstance(
             eph,
             dict
@@ -1814,19 +1438,47 @@ def get_deep_sky_data(
         # ALTITUDE FILTER
         # =================================================
 
-        if (
+        # if (
 
-            best_altitude is None
+        #     best_altitude is None
 
-            or
+        #     or
 
-            best_altitude < float(
-                min_altitude
-            )
+        #     best_altitude < float(
+        #         min_altitude
+        #     )
 
-        ):
+        # ):
 
-            continue
+        #     continue
+
+print("BEST ALTITUDE:", best_altitude)
+print("MIN ALTITUDE:", min_altitude)
+
+if best_altitude is None:
+
+    print(
+        "FILTERED: No best altitude:",
+        slug
+    )
+
+    continue
+
+if best_altitude < float(min_altitude):
+
+    print(
+        "FILTERED: Altitude too low:",
+        slug,
+        best_altitude
+    )
+
+    continue
+
+print(
+    "PASSED ALTITUDE FILTER:",
+    slug,
+    best_altitude
+)
 
 
         # =================================================
