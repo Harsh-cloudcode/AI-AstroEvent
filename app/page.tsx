@@ -2594,84 +2594,7 @@ function normalizeVisibility(value: any) {
   return text.replaceAll("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
-// function getObjectName(object: any): string {
-//   if (object === null || object === undefined) return "Unknown object"
 
-//   // Sometimes an API returns the object name directly as a string.
-//   if (typeof object === "string" || typeof object === "number") {
-//     const text = String(object).trim()
-//     return text || "Unknown object"
-//   }
-
-//   if (Array.isArray(object)) {
-//     for (const item of object) {
-//       const name = getObjectName(item)
-//       if (name !== "Unknown object") return name
-//     }
-//     return "Unknown object"
-//   }
-
-//   const keys = [
-//     // Most common API fields
-//     "name", "object_name", "objectName", "target_name", "targetName",
-//     "shower_name", "showerName", "constellation_name", "constellationName",
-//     "planet_name", "planetName", "designation", "code", "id", "label",
-//     // Astronomy Engine / astronomy APIs
-//     "body", "planet", "target", "object", "body_name", "bodyName",
-//     // Nested/common response fields
-//     "data", "result", "details", "info", "metadata",
-//   ]
-
-//   for (const key of keys) {
-//     const value = object?.[key]
-
-//     if (value === null || value === undefined || value === "") continue
-
-//     if (typeof value === "string" || typeof value === "number") {
-//       const text = String(value).trim()
-//       if (text && !/^\d+$/.test(text)) return text
-//     }
-
-//     if (typeof value === "object") {
-//       // Handle enum-like values such as { name: "Jupiter" },
-//       // { value: "Jupiter" }, { label: "Jupiter" }.
-//       for (const nestedKey of ["name", "value", "label", "text", "title"]) {
-//         const nested = value?.[nestedKey]
-//         if (typeof nested === "string" || typeof nested === "number") {
-//           const text = String(nested).trim()
-//           if (text && !/^\d+$/.test(text)) return text
-//         }
-//       }
-
-//       const nestedName = getObjectName(value)
-//       if (nestedName !== "Unknown object") return nestedName
-//     }
-//   }
-
-//   // Last fallback: look through all top-level values for a meaningful
-//   // name-like string. This handles slightly different API schemas.
-//   for (const [key, value] of Object.entries(object)) {
-//     if (typeof value !== "string" && typeof value !== "number") continue
-//     const text = String(value).trim()
-//     if (!text || /^\d+$/.test(text)) continue
-
-//     const keyText = key.toLowerCase()
-//     if (
-//       keyText.includes("name") ||
-//       keyText.includes("object") ||
-//       keyText.includes("planet") ||
-//       keyText.includes("shower") ||
-//       keyText.includes("constellation") ||
-//       keyText === "body" ||
-//       keyText === "target" ||
-//       keyText === "designation"
-//     ) {
-//       return text
-//     }
-//   }
-
-//   return "Unknown object"
-// }
 
 function getObjectName(object: any): string {
   if (object === null || object === undefined) return "Unknown object"
@@ -2909,13 +2832,43 @@ function getSet(object: any) {
   ])
 }
 
+// function getBestTime(object: any) {
+//   return firstValue(object, [
+//     "best_time",
+//     "best",
+//     "best_observation_time",
+//     "best_time_local",
+//   ])
+// }
+
 function getBestTime(object: any) {
-  return firstValue(object, [
+  const best = firstValue(object, [
     "best_time",
     "best",
     "best_observation_time",
     "best_time_local",
   ])
+
+  // If best is already a time string
+  if (
+    typeof best === "string" ||
+    typeof best === "number"
+  ) {
+    return best
+  }
+
+  // If best is an object, extract its time
+  if (best && typeof best === "object") {
+    return firstValue(best, [
+      "time",
+      "best_time",
+      "best_observation_time",
+      "datetime",
+      "date",
+    ])
+  }
+
+  return null
 }
 
 function getAzimuth(object: any) {
@@ -3748,285 +3701,6 @@ function SessionSetup({
   )
 }
 
-/* =========================================================
-   QUICK SUMMARY
-========================================================= */
-
-// function QuickSummary({
-//   observationData,
-//   analyzed,
-// }: {
-//   observationData: any
-//   analyzed: boolean
-// }) {
-//   const summary = useMemo(() => {
-//     if (!observationData) {
-//       return {
-//         cloud: null,
-//         moon: null,
-//         targets: null,
-//         score: null,
-//       }
-//     }
-
-//     const cloud =
-//       firstValue(observationData, [
-//         "cloud_cover",
-//       ]) ??
-//       getNested(observationData, [
-//         "weather",
-//         "cloud_cover",
-//       ]) ??
-//       getNested(observationData, [
-//         "weather",
-//         "current",
-//         "cloud_cover",
-//       ])
-
-//     const moon =
-//       getNested(observationData, [
-//         "moon",
-//         "illumination",
-//       ]) ??
-//       getNested(observationData, [
-//         "sun_moon",
-//         "moon",
-//         "illumination",
-//       ])
-
-//     const planets = getPlanets(observationData)
-//     const deepSky = getDeepSky(observationData)
-//     const constellations = getConstellations(observationData)
-
-//     const targets =
-//       planets.length +
-//       deepSky.length +
-//       constellations.length
-
-//     const score =
-//       getNested(observationData, [
-//         "ai_recommendation",
-//         "score",
-//       ]) ??
-//       getNested(observationData, [
-//         "recommendation",
-//         "score",
-//       ]) ??
-//       observationData?.score
-
-//     return {
-//       cloud,
-//       moon,
-//       targets,
-//       score,
-//     }
-//   }, [observationData])
-
-//   return (
-//     <section className="rounded-3xl border border-white/10 bg-white/[0.025] p-5 sm:p-6">
-//       <SectionHeader
-//         icon={<Activity className="h-5 w-5" />}
-//         eyebrow="Overview"
-//         title="Quick Summary"
-//         description="A fast snapshot of your observing conditions."
-//       />
-
-//       <div className="mt-6 grid grid-cols-2 gap-3">
-//         <SummaryBox
-//           icon={<Cloud className="h-4 w-4" />}
-//           label="Cloud Cover"
-//           value={
-//             summary.cloud !== null
-//               ? `${summary.cloud}%`
-//               : analyzed
-//                 ? "—"
-//                 : "—"
-//           }
-//           accent="cyan"
-//         />
-
-//         <SummaryBox
-//           icon={<Moon className="h-4 w-4" />}
-//           label="Moon"
-//           value={
-//             summary.moon !== null
-//               ? `${summary.moon}%`
-//               : "—"
-//           }
-//           accent="violet"
-//         />
-
-//         <SummaryBox
-//           icon={<Eye className="h-4 w-4" />}
-//           label="Visible Targets"
-//           value={
-//             summary.targets !== null
-//               ? String(summary.targets)
-//               : "—"
-//           }
-//           accent="blue"
-//         />
-
-//         <SummaryBox
-//           icon={<Sparkles className="h-4 w-4" />}
-//           label="Overall Score"
-//           value={
-//             summary.score !== null
-//               ? `${summary.score}/10`
-//               : "—"
-//           }
-//           accent="amber"
-//         />
-//       </div>
-//     </section>
-//   )
-// }
-
-// function QuickSummary({
-//   observationData,
-//   analyzed,
-// }: {
-//   observationData: any
-//   analyzed: boolean
-// }) {
-//   const summary = useMemo(() => {
-//     if (!observationData) {
-//       return {
-//         cloud: null,
-//         moon: null,
-//         targets: null,
-//         observationWindow: null,
-//       }
-//     }
-
-//     const cloud =
-//       firstValue(observationData, [
-//         "cloud_cover",
-//       ]) ??
-//       getNested(observationData, [
-//         "weather",
-//         "cloud_cover",
-//       ]) ??
-//       getNested(observationData, [
-//         "weather",
-//         "current",
-//         "cloud_cover",
-//       ])
-
-//     const moon =
-//       getNested(observationData, [
-//         "moon",
-//         "illumination",
-//       ]) ??
-//       getNested(observationData, [
-//         "sun_moon",
-//         "moon",
-//         "illumination",
-//       ])
-
-//     const planets = getPlanets(observationData)
-//     const deepSky = getDeepSky(observationData)
-//     const constellations = getConstellations(observationData)
-
-//     const targets =
-//       planets.length +
-//       deepSky.length +
-//       constellations.length
-
-//     const fromTime =
-//       getNested(observationData, [
-//         "observation",
-//         "from_time",
-//       ]) ??
-//       getNested(observationData, [
-//         "selected",
-//         "from_time",
-//       ]) ??
-//       observationData?.from_time
-
-//     const toTime =
-//       getNested(observationData, [
-//         "observation",
-//         "to_time",
-//       ]) ??
-//       getNested(observationData, [
-//         "selected",
-//         "to_time",
-//       ]) ??
-//       observationData?.to_time
-
-//     const observationWindow =
-//       fromTime && toTime
-//         ? `${fromTime} – ${toTime}`
-//         : null
-
-//     return {
-//       cloud,
-//       moon,
-//       targets,
-//       observationWindow,
-//     }
-//   }, [observationData])
-
-//   return (
-//     <section className="rounded-3xl border border-white/10 bg-white/[0.025] p-5 sm:p-6">
-//       <SectionHeader
-//         icon={<Activity className="h-5 w-5" />}
-//         eyebrow="Overview"
-//         title="Quick Summary"
-//         description="A fast snapshot of your observing conditions."
-//       />
-
-//       <div className="mt-6 grid grid-cols-2 gap-3">
-//         {/* Cloud Cover */}
-//         <SummaryBox
-//           icon={<Cloud className="h-4 w-4" />}
-//           label="Cloud Cover"
-//           value={
-//             summary.cloud !== null
-//               ? `${summary.cloud}%`
-//               : "—"
-//           }
-//           accent="cyan"
-//         />
-
-//         {/* Moon */}
-//         <SummaryBox
-//           icon={<Moon className="h-4 w-4" />}
-//           label="Moon"
-//           value={
-//             summary.moon !== null
-//               ? `${summary.moon}%`
-//               : "—"
-//           }
-//           accent="violet"
-//         />
-
-//         {/* Visible Targets */}
-//         <SummaryBox
-//           icon={<Eye className="h-4 w-4" />}
-//           label="Visible Targets"
-//           value={
-//             summary.targets !== null
-//               ? String(summary.targets)
-//               : "—"
-//           }
-//           accent="blue"
-//         />
-
-//         {/* Observation Window */}
-//         <SummaryBox
-//           icon={<Clock className="h-4 w-4" />}
-//           label="Observation Window"
-//           value={
-//             summary.observationWindow ?? "—"
-//           }
-//           accent="amber"
-//         />
-//       </div>
-//     </section>
-//   )
-// }
 
 function QuickSummary({
   observationData,
@@ -4226,279 +3900,7 @@ function QuickSummary({
     </section>
   )
 }
-/* =========================================================
-   SKY CONDITIONS
-========================================================= */
-
-// function SkyConditions({ data }: { data: any }) {
-//   const weather =
-//     data?.weather ||
-//     data?.weather_data ||
-//     data?.modules?.weather ||
-//     {}
-
-//   const hourly = weather?.hourly || {}
-
-//   const cloud = firstValue(
-//     weather,
-//     ["cloud_cover"]
-//   ) ?? firstValue(
-//     hourly,
-//     ["cloud_cover"]
-//   )
-
-//   const humidity = firstValue(
-//     weather,
-//     ["relative_humidity", "humidity"]
-//   ) ?? firstValue(
-//     hourly,
-//     ["relative_humidity_2m"]
-//   )
-
-//   const visibility = firstValue(
-//     weather,
-//     ["visibility"]
-//   ) ?? firstValue(
-//     hourly,
-//     ["visibility"]
-//   )
-
-//   const wind = firstValue(
-//     weather,
-//     ["wind_speed", "wind_speed_10m"]
-//   ) ?? firstValue(
-//     hourly,
-//     ["wind_speed_10m"]
-//   )
-
-//   const temperature = firstValue(
-//     weather,
-//     ["temperature", "temperature_2m"]
-//   ) ?? firstValue(
-//     hourly,
-//     ["temperature_2m"]
-//   )
-
-//   const dewPoint = firstValue(
-//     weather,
-//     ["dew_point", "dew_point_2m"]
-//   ) ?? firstValue(
-//     hourly,
-//     ["dew_point_2m"]
-//   )
-
-//   return (
-//     <section className="rounded-3xl border border-white/10 bg-white/[0.025] p-5 sm:p-6">
-//       <SectionHeader
-//         icon={<Cloud className="h-5 w-5" />}
-//         eyebrow="Atmosphere"
-//         title="Sky Conditions"
-//         description="Weather factors affecting your observation."
-//       />
-
-//       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
-//         <Metric
-//           label="Cloud"
-//           value={cloud !== null ? `${cloud}%` : "—"}
-//         />
-
-//         <Metric
-//           label="Humidity"
-//           value={
-//             humidity !== null
-//               ? `${humidity}%`
-//               : "—"
-//           }
-//         />
-
-//         <Metric
-//           label="Visibility"
-//           value={
-//             visibility !== null
-//               ? `${visibility}`
-//               : "—"
-//           }
-//         />
-
-//         <Metric
-//           label="Wind"
-//           value={
-//             wind !== null
-//               ? `${wind}`
-//               : "—"
-//           }
-//         />
-
-//         <Metric
-//           label="Temperature"
-//           value={
-//             temperature !== null
-//               ? `${temperature}°`
-//               : "—"
-//           }
-//         />
-
-//         <Metric
-//           label="Dew Point"
-//           value={
-//             dewPoint !== null
-//               ? `${dewPoint}°`
-//               : "—"
-//           }
-//         />
-//       </div>
-//     </section>
-//   )
-// }
-
-// function SkyConditions({
-//   cloud,
-//   humidity,
-//   visibility,
-//   wind,
-//   temperature,
-//   dewPoint,
-// }: {
-//   cloud: any
-//   humidity: any
-//   visibility: any
-//   wind: any
-//   temperature: any
-//   dewPoint: any
-// }) {
-//   function getAverage(value: any): number | null {
-//     // Direct array
-//     if (Array.isArray(value)) {
-//       const numbers = value
-//         .flat(Infinity)
-//         .map(Number)
-//         .filter((n) => Number.isFinite(n))
-
-//       if (numbers.length === 0) {
-//         return null
-//       }
-
-//       return (
-//         numbers.reduce((sum, number) => sum + number, 0) /
-//         numbers.length
-//       )
-//     }
-
-//     // Direct number / numeric string
-//     if (
-//       typeof value === "number" ||
-//       typeof value === "string"
-//     ) {
-//       const number = Number(value)
-
-//       return Number.isFinite(number) ? number : null
-//     }
-
-//     // Handle object values
-//     if (value && typeof value === "object") {
-//       const possibleValues = [
-//         value.value,
-//         value.values,
-//         value.data,
-//         value.hourly,
-//         value.results,
-//       ]
-
-//       for (const possibleValue of possibleValues) {
-//         const result = getAverage(possibleValue)
-
-//         if (result !== null) {
-//           return result
-//         }
-//       }
-//     }
-
-//     return null
-//   }
-
-//   const cloudAvg = getAverage(cloud)
-//   const humidityAvg = getAverage(humidity)
-//   const visibilityAvg = getAverage(visibility)
-//   const windAvg = getAverage(wind)
-//   const temperatureAvg = getAverage(temperature)
-//   const dewPointAvg = getAverage(dewPoint)
-
-//   return (
-//     <section className="rounded-3xl border border-white/10 bg-white/[0.025] p-5 sm:p-6">
-//       <SectionHeader
-//         icon={<Cloud className="h-5 w-5" />}
-//         eyebrow="Atmosphere"
-//         title="Sky Conditions"
-//         description="Weather factors affecting your observation."
-//       />
-
-//       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
-
-//         {/* Cloud */}
-//         <Metric
-//           label="Cloud"
-//           value={
-//             cloudAvg !== null
-//               ? `${cloudAvg.toFixed(0)}%`
-//               : "—"
-//           }
-//         />
-
-//         {/* Humidity */}
-//         <Metric
-//           label="Humidity"
-//           value={
-//             humidityAvg !== null
-//               ? `${humidityAvg.toFixed(0)}%`
-//               : "—"
-//           }
-//         />
-
-//         {/* Visibility */}
-//         <Metric
-//           label="Visibility"
-//           value={
-//             visibilityAvg !== null
-//               ? `${(visibilityAvg / 1000).toFixed(1)} km`
-//               : "—"
-//           }
-//         />
-
-//         {/* Wind */}
-//         <Metric
-//           label="Wind"
-//           value={
-//             windAvg !== null
-//               ? `${windAvg.toFixed(1)} km/h`
-//               : "—"
-//           }
-//         />
-
-//         {/* Temperature */}
-//         <Metric
-//           label="Temperature"
-//           value={
-//             temperatureAvg !== null
-//               ? `${temperatureAvg.toFixed(1)}°C`
-//               : "—"
-//           }
-//         />
-
-//         {/* Dew Point */}
-//         <Metric
-//           label="Dew Point"
-//           value={
-//             dewPointAvg !== null
-//               ? `${dewPointAvg.toFixed(1)}°C`
-//               : "—"
-//           }
-//         />
-
-//       </div>
-//     </section>
-//   )
-// }
-
+/
 function SkyConditions({ data }: { data: any }) {
   function getAverage(value: any): number | null {
     if (Array.isArray(value)) {
@@ -4630,122 +4032,7 @@ function SkyConditions({ data }: { data: any }) {
     </section>
   )
 }
-/* =========================================================
-   SUN & MOON
-========================================================= */
 
-// function SunMoon({ data }: { data: any }) {
-//   const sun =
-//     data?.sun ||
-//     data?.sun_data ||
-//     data?.modules?.sun ||
-//     {}
-
-//   const moon =
-//     data?.moon ||
-//     data?.moon_data ||
-//     data?.modules?.moon ||
-//     {}
-
-//   const sunrise = firstValue(sun, [
-//     "sunrise",
-//     "sunrise_local",
-//   ])
-
-//   const sunset = firstValue(sun, [
-//     "sunset",
-//     "sunset_local",
-//   ])
-
-//   const astroDusk = firstValue(sun, [
-//     "astronomical_dusk",
-//     "astronomical_dusk_local",
-//     "astronomical_twilight_end",
-//   ])
-
-//   const astroDawn = firstValue(sun, [
-//     "astronomical_dawn",
-//     "astronomical_dawn_local",
-//     "astronomical_twilight_start",
-//   ])
-
-//   const phase = firstValue(moon, [
-//     "phase",
-//     "moon_phase",
-//   ])
-
-//   const illumination = firstValue(moon, [
-//     "illumination",
-//     "illumination_percentage",
-//   ])
-
-//   const moonrise = firstValue(moon, [
-//     "moonrise",
-//     "moonrise_local",
-//   ])
-
-//   const moonset = firstValue(moon, [
-//     "moonset",
-//     "moonset_local",
-//   ])
-
-//   return (
-//     <section className="rounded-3xl border border-white/10 bg-white/[0.025] p-5 sm:p-6">
-//       <SectionHeader
-//         icon={<Moon className="h-5 w-5" />}
-//         eyebrow="Celestial Light"
-//         title="Sun & Moon"
-//         description="Darkness and lunar conditions during your session."
-//       />
-
-//       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
-//         <Metric
-//           label="Sunset"
-//           value={formatValue(sunset)}
-//         />
-
-//         <Metric
-//           label="Sunrise"
-//           value={formatValue(sunrise)}
-//         />
-
-//         <Metric
-//           label="Astronomical Dusk"
-//           value={formatValue(astroDusk)}
-//         />
-
-//         <Metric
-//           label="Astronomical Dawn"
-//           value={formatValue(astroDawn)}
-//         />
-
-//         <Metric
-//           label="Moon Phase"
-//           value={formatValue(phase)}
-//         />
-
-//         <Metric
-//           label="Moon Illumination"
-//           value={
-//             illumination !== null
-//               ? `${illumination}%`
-//               : "—"
-//           }
-//         />
-
-//         <Metric
-//           label="Moonrise"
-//           value={formatValue(moonrise)}
-//         />
-
-//         <Metric
-//           label="Moonset"
-//           value={formatValue(moonset)}
-//         />
-//       </div>
-//     </section>
-//   )
-// }
 
 function SunMoon({ data }: { data: any }) {
   const sun =
@@ -4930,201 +4217,6 @@ function ObjectSection({
   )
 }
 
-/* =========================================================
-   OBJECT CARD
-========================================================= */
-
-// function AstronomyObjectCard({
-//   object,
-//   fallbackType,
-//   accent,
-//   meteor,
-// }: {
-//   object: any
-//   fallbackType: string
-//   accent: string
-//   meteor?: boolean
-// }) {
-//   const name = getObjectName(object)
-
-//   const type = getObjectType(
-//     object,
-//     fallbackType
-//   )
-
-//   const rise = getRise(object)
-//   const set = getSet(object)
-//   const best = getBestTime(object)
-//   const peakTime = getPeakTime(object)
-//   const peakRate = getPeakRate(object)
-//   const constellation = getConstellation(object)
-//   const azimuth = getAzimuth(object)
-//   const altitude = getAltitude(object)
-//   const distance = normalizeDistance(
-//     getDistance(object)
-//   )
-
-//   const recommendation =
-//     getRecommendation(object)
-
-//   return (
-//     <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-black/20 p-4 transition hover:border-white/15 hover:bg-white/[0.035]">
-//       <div
-//         className={`absolute left-0 top-0 h-full w-[2px] ${
-//           accent === "violet"
-//             ? "bg-violet-400/70"
-//             : accent === "blue"
-//               ? "bg-blue-400/70"
-//               : accent === "amber"
-//                 ? "bg-amber-300/70"
-//                 : "bg-cyan-300/70"
-//         }`}
-//       />
-
-//       {/* Identity */}
-//       <div className="flex items-start gap-3">
-//         <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04]">
-//           {meteor ? (
-//             <Zap className="h-4 w-4 text-amber-300" />
-//           ) : (
-//             <Star className="h-4 w-4 text-cyan-300" />
-//           )}
-//         </div>
-
-//         <div className="min-w-0 flex-1">
-//           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-//             <div className="min-w-0">
-//               <h3 className="truncate text-sm font-semibold text-white/95">
-//                 {name}
-//               </h3>
-
-//               <div className="mt-0.5 text-xs text-white/35">
-//                 {type}
-//                 {constellation ? ` · ${constellation}` : ""}
-//               </div>
-//             </div>
-
-//           </div>
-
-//           {/* Availability */}
-//           <div className="mt-4">
-//             {(() => {
-//               const isVisible = getAvailability(object)
-//               return (
-//                 <div
-//                   className={`flex items-center gap-3 rounded-xl border px-4 py-3 ${
-//                     isVisible
-//                       ? "border-emerald-400/20 bg-emerald-400/[0.07]"
-//                       : "border-white/10 bg-white/[0.035]"
-//                   }`}
-//                 >
-//                   <span
-//                     className={`h-2.5 w-2.5 shrink-0 rounded-full ${
-//                       isVisible ? "bg-emerald-300 shadow-[0_0_12px_rgba(110,231,183,.8)]" : "bg-white/35"
-//                     }`}
-//                   />
-//                   <div>
-//                     <div className={`text-sm font-semibold ${isVisible ? "text-emerald-200" : "text-white/75"}`}>
-//                       Available — {isVisible ? "Visible" : "Not visible"}
-//                     </div>
-//                     <div className="mt-0.5 text-[10px] uppercase tracking-[0.15em] text-white/30">
-//                       {isVisible ? "Object is above the horizon" : "Object is available but below the horizon"}
-//                     </div>
-//                   </div>
-//                 </div>
-//               )
-//             })()}
-//           </div>
-
-//           {/* Astronomy information */}
-//           <div className="mt-4 border-t border-white/5 pt-3">
-//             <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-[11px] text-white/45">
-//               {!meteor && rise && (
-//                 <span>
-//                   <strong className="text-white/65">
-//                     Rise
-//                   </strong>{" "}
-//                   {formatObservationTime(rise)}
-//                 </span>
-//               )}
-
-//               {!meteor && set && (
-//                 <span>
-//                   <strong className="text-white/65">
-//                     Set
-//                   </strong>{" "}
-//                   {formatObservationTime(set)}
-//                 </span>
-//               )}
-
-//               {best && (
-//                 <span>
-//                   <strong className="text-white/65">
-//                     Best
-//                   </strong>{" "}
-//                   {formatObservationTime(best)}
-//                 </span>
-//               )}
-
-//               {meteor && peakTime && (
-//                 <span>
-//                   <strong className="text-white/65">
-//                     Peak
-//                   </strong>{" "}
-//                   {formatObservationTime(peakTime)}
-//                 </span>
-//               )}
-
-//               {meteor && peakRate !== null && peakRate !== undefined && (
-//                 <span>
-//                   <strong className="text-white/65">
-//                     Peak rate
-//                   </strong>{" "}
-//                   {peakRate} meteors/hr
-//                 </span>
-//               )}
-
-//               {azimuth && (
-//                 <span>
-//                   <strong className="text-white/65">
-//                     Az
-//                   </strong>{" "}
-//                   {azimuth}
-//                 </span>
-//               )}
-
-//               {altitude && (
-//                 <span>
-//                   <strong className="text-white/65">
-//                     Alt
-//                   </strong>{" "}
-//                   {altitude}
-//                 </span>
-//               )}
-
-//               {distance && (
-//                 <span>
-//                   <strong className="text-white/65">
-//                     Distance
-//                   </strong>{" "}
-//                   {distance}
-//                 </span>
-//               )}
-//             </div>
-//           </div>
-
-//           {/* Recommendation */}
-//           {recommendation && (
-//             <div className="mt-3 flex gap-2 text-xs leading-5 text-white/40">
-//               <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-cyan-300/60" />
-//               <span>{recommendation}</span>
-//             </div>
-//           )}
-//         </div>
-//       </div>
-//     </div>
-//   )
-// }
 
 
 
@@ -5150,6 +4242,8 @@ function AstronomyObjectCard({
   const rise = getRise(object)
   const set = getSet(object)
   const best = getBestTime(object)
+  console.log("ASTRONOMY OBJECT:", object)
+  console.log("BEST DATA:", object?.best)
 
   const peakTime = getPeakTime(object)
   const peakRate = getPeakRate(object)
@@ -5640,7 +4734,7 @@ function AstronomyObjectCard({
                     <strong className="text-white/65">
                       Best
                     </strong>{" "}
-                      {formatObservationTime(best?.time)}
+                       {formatObservationTime(best)}
                   </span>
                 )}
 
@@ -6251,25 +5345,6 @@ function SummaryBox({
   )
 }
 
-// function Metric({
-//   label,
-//   value,
-// }: {
-//   label: string
-//   value: string
-// }) {
-//   return (
-//     <div className="rounded-2xl border border-white/5 bg-black/15 p-3">
-//       <div className="text-[10px] uppercase tracking-wider text-white/25">
-//         {label}
-//       </div>
-
-//       <div className="mt-1.5 truncate text-sm font-medium text-white/80">
-//         {value}
-//       </div>
-//     </div>
-//   )
-// }
 
 function Metric({
   label,
@@ -6443,54 +5518,6 @@ function getConstellations(data: any) {
   )
 }
 
-// function getMeteorShowers(data: any) {
-//   return getArray(data?.meteor_showers, [
-//     "showers",
-//     "objects",
-//     "active",
-//     "results",
-//     "data",
-//     "meteor_showers",
-//   ]).concat(
-//     getArray(data?.meteorShowers, ["showers", "objects", "active", "results", "data"])
-//   )
-// }
-
-
-
-
-
-// function getMeteorShowers(data: any) {
-//   const showers = [
-//     ...getArray(data?.meteor_showers, [
-//       "showers",
-//       "objects",
-//       "active",
-//       "results",
-//       "data",
-//       "meteor_showers",
-//     ]),
-//     ...getArray(data?.meteorShowers, [
-//       "showers",
-//       "objects",
-//       "active",
-//       "results",
-//       "data",
-//     ]),
-//   ]
-
-//   return showers.map((shower: any) => ({
-//     ...shower,
-
-//     // Make sure the frontend has the API's actual meteor shower name
-//     name:
-//       shower.name ||
-//       shower.shower?.name ||
-//       shower.meteor_shower?.name ||
-//       shower.title ||
-//       "Unknown meteor shower",
-//   }))
-// }
 
 
 function getMeteorShowers(data: any) {
